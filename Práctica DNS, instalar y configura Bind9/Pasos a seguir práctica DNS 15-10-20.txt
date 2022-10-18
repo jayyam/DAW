@@ -1,0 +1,259 @@
+sudo apt update
+
+
+---------- INSTALACIÓN BIND9 Y CONFIGURACIÓN --------
+
+sudo apt install bind9 bind9utils bind9-doc dnsutils resolvconf
+
+
+
+-> cambiamos el nombre del servidor por maestro
+sudo nano /etc/hostname
+sudo hostnamectl set-hostname servermaster
+sudo reboot
+
+
+
+sudo nano /etc/bind/named.conf.options
+
+acl "trusted" {
+        172.16.6.2;       # ns1 (la ip de este servidor que es el MAESTRO)
+        172.16.6.100;     # ns2 (la ip de un servidor esclavo)
+        172.16.0.0/16;    # subred que utilizaremos
+};
+
+options {
+        directory "/var/cache/bind";
+
+        recursion yes;                 # Permitir la recursión
+        allow-recursion { trusted; };  # Permitir la recursión solo a los hosts declarados
+        allow-query { trusted; };      # Permitir las consultas solo a los hosts declarados
+        dnssec-validation auto;        # Auto-validación de DNSSEC
+        # listen-on { 172.16.6.2; };   # IP de escucha
+		listen-on-v6 port 53 {any;};
+        allow-transfer { trusted; };   # permitir la transferencia solo a los hosts declarados
+        version "DNS server";          # Ocultar la versión de bind
+        forwarders {
+                8.8.8.8;               #Google DNS
+                209.67.222.222;        #OpenDNS
+        };
+
+        auth-nxdomain no;              # conform to RFC1035
+};
+
+
+-> DEFINIR LAS ZONAS del MAESTRO
+
+sudo nano /etc/bind/named.conf.local
+
+
+acl mi_aula {
+    171.16.6.0/24;
+ };
+
+zone "orenes1.com" {
+ type master;
+ file "/etc/bind/zones/db.orenes1.com";  # Path del fichero de zona directa
+ allow-transfer { 172.16.6.100; };       # Permitir la transferencia a NS2
+};
+
+zone "yolanda1.es" {
+ type master;
+ file "/etc/bind/zones/db.yolanda1.es";  # Path del fichero de zona directa
+ allow-transfer { 172.16.6.100; };       # Permitir la transferencia a NS2
+ allow-query { mi_aula; };
+};
+
+zone "16.172.in-addr.arpa" {
+ type master;
+ file "/etc/bind/zones/db.172.16";   # Path del fichero de zona inversa - subred:172.16.0.0/16
+ allow-transfer { 172.16.6.100; };   # Permitir la transferencia a NS2
+};
+
+
+
+-> comprobar errores de sintaxis
+
+named-checkconf
+
+
+-> crear el directorio de zonas
+sudo mkdir /etc/bind/zones
+
+-> Crear la zona a partir del archivo de ejemplo
+sudo cp /etc/bind/db.local /etc/bind/zones/db.orenes1.com
+
+-> editar el fichero de zona según las especificaciones de la práctica
+
+explicación de los campos:
+https://web.mit.edu/rhel-doc/4/RH-DOCS/rhel-rg-es-4/s1-bind-zone.html
+
+sudo nano /etc/bind/zones/db.orenes1.com
+
+;
+; BIND fichero de zona directa para orenes1.com
+;
+$TTL    86400
+@       IN      SOA     servermaster.orenes1.com. esclavo.orenes1.com. (
+                              3         ; Serial
+                          86400         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+
+; NS records
+@                       IN      NS      servermaster.orenes1.com.
+@                       IN      NS      esclavo.orenes1.com.
+
+; name servers - A records
+servermaster.orenes1.com.  IN      A       172.16.6.2
+esclavo                    IN      A       172.16.6.100
+
+; host - A records
+yolanda       IN      A       172.16.0.20
+jmartinez     IN      A       172.16.0.21
+web           IN      A       172.16.0.22
+router        IN      A       172.16.0.1
+mail          IN      A       172.16.6.18
+mail2         IN      A       172.16.6.19
+
+sip           IN AAAA fd61:c23c:b3b6::3
+
+; registros para recibir correo del dominio
+@             IN      MX      10 mail
+@             IN      MX      20 mail2
+
+www            43200   CNAME   web.orenes1.com.
+ftp            43200   CNAME   web.orenes1.com.
+aulavirtural   43200   CNAME   web.orenes1.com.
+
+murcia     2592000       IN      LOC     37 N 1 W 0.00
+
+-> Comprobar la zona directa (debe decir OK)
+
+named-checkzone servermaster.orenes1.com /etc/bind/zones/db.orenes1.com
+
+
+
+
+sudo nano /etc/bind/zones/db.yolanda1.es
+
+
+
+;
+; BIND fichero de zona directa para yolanda1.es
+;
+$TTL    86400
+@       IN      SOA     servermaster.yolanda1.es. esclavo.yolanda1.es. (
+                              4         ; Serial
+                          86400         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+
+; NS records
+@                       IN      NS      servermaster.yolanda1.com.
+@                       IN      NS      esclavo.yolanda11.com.
+
+; name servers - A records
+servermaster.yolanda1.es.  IN      A       172.16.6.2
+esclavo                    IN      A       172.16.6.100
+
+; host - A records
+yolanda       IN      A       172.16.0.20
+jmartinez     IN      A       172.16.0.21
+web           IN      A       172.16.0.22
+router        IN      A       172.16.0.1
+mail          IN      A       172.16.6.18
+mail2         IN      A       172.16.6.19
+
+; registros para recibir correo del dominio
+@             IN      MX      10 mail
+@             IN      MX      20 mail2
+
+www            43200   CNAME   web.yolanda1.es.
+ftp            43200   CNAME   web.yolanda1.es.
+aulavirtural   43200   CNAME   web.yolanda1.es.
+
+
+-> Comprobar la zona directa (debe decir OK)
+
+named-checkzone servermaster.yolanda1.es /etc/bind/zones/db.yolanda1.es
+
+
+
+ZONA INVERSA
+
+-> Crear la zona a partir del archivo de ejemplo
+
+sudo cp /etc/bind/db.127 /etc/bind/zones/db.172.16
+
+sudo nano /etc/bind/zones/db.172.16
+
+;
+; BIND zona inversapara orenes1.com
+;
+
+$TTL    86400
+@       IN      SOA     servermaster.orenes1.com. esclavo.orenes1.com. (
+                              5         ; Serial
+                          86400         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+; NS records
+        IN      NS      servermaster.orenes1.com.
+        IN      NS      esclavo.orenes1.com.
+
+; PTR Records
+2.6     IN      PTR     servermaster.orenes1.com.
+100.6   IN      PTR     esclavo.orenes1.com.
+20.0    IN      PTR     yolanda.orenes1.com.
+21.0    IN      PTR     jmartinez.orenes1.com.
+22.0    IN      PTR     web.orenes1.com.
+1.0     IN      PTR     router.orenes1.com.
+18.6    IN      PTR     mail.orenes1.com.
+19.6    IN      PTR     mail2.orenes1.com.
+3::b3b6:c23c:fd61 IN PTR sip.orenes1.com.
+
+-> Comprobar la sintaxis de la zona inversa (tiene que decir OK al final)
+
+named-checkzone 16.172.in-addr-arpa /etc/bind/zones/db.172.16
+
+
+-> editamos el fichero de planes de red para asignar una ip estática en el rango que especifica la práctica.
+sudo nano /etc/netplan/50-cloud-init.yaml
+o
+sudo nano /etc/netplan/01-netcfg.yaml
+dependiendo de la revisión de la distro.
+
+# Este archivo describe las interfaces de red disponibles en tu sistema
+
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      dhcp6: no
+      addresses: [172.16.6.2/16]
+      gateway4: 172.16.6.1
+      nameservers:
+        addresses: [172.16.6.2]
+
+
+
+reiniciar y hacer las pruebas desde la consola de VirtualBox.
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,14 +1,20 @@
+
+https://www.redeszone.net/tutoriales/internet/que-es-registros-dns/
+https://dnslookup.es/blog/que-es-el-dns/
+https://w3.ual.es/~vruiz/Docencia/Apuntes/Networking/Protocols/Level-5/01-DNS/index.html
+Puerto 53 para servidores dns
 sudo apt update
 
 
 ---------- INSTALACIÓN BIND9 Y CONFIGURACIÓN --------
 
 sudo apt install bind9 bind9utils bind9-doc dnsutils resolvconf
-
+dig @servidor-dns ejemplo.com tipo-de-registro directo
+dig -x 173.194.34.233 o cualquier IP dig inverrso
 
 
 -> cambiamos el nombre del servidor por maestro
-sudo nano /etc/hostname
+sudo nano /etc/hostname y añadir el nombre que se desee poner que salga en bash
 sudo hostnamectl set-hostname servermaster
 sudo reboot
 
@@ -225,7 +231,7 @@ named-checkzone 16.172.in-addr-arpa /etc/bind/zones/db.172.16
 -> editamos el fichero de planes de red para asignar una ip estática en el rango que especifica la práctica.
 sudo nano /etc/netplan/50-cloud-init.yaml
 o
-sudo nano /etc/netplan/01-netcfg.yaml
+sudo nano /etc/netplan/01-netcfg.yaml //o lo que haya instalado desde el bind
 dependiendo de la revisión de la distro.
 
 # Este archivo describe las interfaces de red disponibles en tu sistema

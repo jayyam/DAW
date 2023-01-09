@@ -37,7 +37,7 @@ options {
         dnssec-validation auto;        # Auto-validación de DNSSEC
         # listen-on { 172.16.6.2; };   # IP de escucha
 		listen-on-v6 port 53 {any;};
-        allow-transfer { trusted; };   # permitir la transferencia solo a los hosts declarados
+        allow-transfer { sudo cp /etc/bind/db.local /etc/bind/zones/db.orenes1.comtrusted; };   # permitir la transferencia solo a los hosts declarados
         version "DNS server";          # Ocultar la versión de bind
         forwarders {
                 8.8.8.8;               #Google DNS

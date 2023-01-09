@@ -1,0 +1,54 @@
+FTP
+
+Servicio de Transferencia de Ficheros
+
+ 
+
+El protocolo FTP (File Transfer Protocol) se utiliza para poder compartir ficheros de forma más o menos fiable. Utiliza los servicios del nivel de transporte, en concreto del protocolo TCP para establecer dos tipos de conexiones:
+
+    De datos: sobre el puerto 20. Se usa para la transferencia de ficheros en sí misma
+    De control: sobre el puerto 21. Se emplea para mostrar los ficheros disponibles, navegar por los diferentes directorios, etc
+
+El servicio FTP está basado en arquitectura cliente-servidor. El cliente inicia la conexión dirigiéndose al puerto 21 del server.
+
+Existe también el servicio TFTP o Trivial FTP (o FTP ligero), que usa UDP en lugar de TCP como protocolo del nivel de transporte. Al utilizar UDP es un servicio más inseguro (en cuanto a la fiabilidad de que la comunicación tenga lugar) pero más rápido. TFTP utiliza el puerto 69. El TFTP se emplea mucho para guardar ficheros de configuración de dispositivos, como pueden ser switches. También se usa en conjunción con el servicio DHCP para proveer de arranque por red mediante PXE.
+
+Modo de conexión
+
+    Activo: es el modo por defecto. El cliente inicia la comunicación llamando al puerto 21 del server y el server es el que inicia la transferencia de datos. Cuando el cliente intenta conectar con el servidor FTP abre uno de sus puertos (llamémosle puerto F) para iniciar la conversación con el puerto 21 del server y se pone a la escucha en el puerto siguiente (puerto F+1). El servidor contesta al puerto F e inicia la transferencia de datos desde su puerto 20 al puerto F+1 del cliente, que se encuentra ya dispuesto a recibir. Se llama activo porque es el servidor el que inicia la transferencia de datos.
+    Pasivo: El cliente inicia la conexión con el servidor FTP enviando un comando PASV al puerto 21 del servidor. Al pasar a modo pasivo el cliente pide al servidor que abra un puerto (aleatorio y superior a 1024). Es entonces cuando el cliente abre la conexión hacia el puerto que abre el servidor para iniciar la transferencia de datos utilizando un puerto diferente al 20. Este modo se usa cuando el server está tras un cortafuegos que le impide iniciar conexiones hacia puertos superiores al 1024.
+
+Modo activo
+
+diagrama FTP activo
+
+Modo pasivo
+
+diagrama FTP pasivo
+
+Conexión
+
+En la actualidad prácticamente todos los Sistemas Operativos están provistos de un cliente FTP que permite conectarse a un servidor.
+
+Al introducir un nombre de usuario el servidor FTP nos sitúa en el directorio que dicho usuario tenga configurado como home FTP. Ese directorio puede ser diferente para cada usuario.
+
+Muchos servidores FTP permiten conexiones anónimas, para las cuales se emplea el usuario anonymous. Al hacer uso del usuario anonymous hay dos posibilidades: que la password esté vacía o que al introducir como user anonymous se muestre información acerca de la password a utilizar. Este segundo método es un poco más seguro ya que dificulta que un robot  busque servicios FTP a los que conectarse. De todas formas la información accesible mediante usuario anonymous no debería nunca ser relevante.
+
+Tipos de transferencia
+
+    ASCII: el sl tipo por defecto. Es apropiado para ficheros de texto.
+    binary: es el idóneo para ficheros multimedia.
+
+
+https://blog.infranetworking.com/servidor-ftp/
+
+ https://blog.ahierro.es/ftp-activo-vs-ftp-pasivo/
+
+ https://www.pureftpd.org/project/pure-ftpd/ Explica el serviciio en si pero no de los archivos de configuracion
+
+ https://tecnolitas.com/blog/como-configurar-un-servidor-ftp-seguro/
+
+ https://www.tecmint.com/install-netstat-in-linux/
+
+
+Exposicion diapositivas de 10 a 30

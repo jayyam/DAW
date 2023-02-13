@@ -1,0 +1,26 @@
+version: '3'
+services:
+  proyecto:
+    build: .
+    ports:
+      - 8016:80
+    volumes:
+      - ./web:/var/www/html/
+    networks:
+      custom_network:
+        ipv4_address: 172.20.254.153
+  db:
+    image: postgres
+    networks:
+      custom_network:
+        ipv4_address: 172.20.254.152
+    enviroment:
+      POSTGRES_DB: cierva
+      POSTGRES_USER: pepito
+      POSTGRES_PASSWORD: cierva
+networks:
+  custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.254.0/24
